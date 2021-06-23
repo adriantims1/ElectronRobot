@@ -1,6 +1,6 @@
 {
-  "name": "electronwebpack",
-  "productName": "electronwebpack",
+  "name": "BinomoRobot",
+  "productName": "BinomoRobot",
   "version": "1.0.0",
   "description": "My Electron application description",
   "main": ".webpack/main",
@@ -80,9 +80,14 @@
   },
   "dependencies": {
     "@material-ui/core": "^4.11.4",
+    "@material-ui/icons": "^4.11.2",
+    "apexcharts": "^3.27.1",
     "electron-reload": "^1.5.0",
     "electron-squirrel-startup": "^1.0.0",
     "react": "^17.0.2",
-    "react-dom": "^17.0.2"
+    "react-apexcharts": "^1.3.9",
+    "react-dom": "^17.0.2",
+    "react-router-dom": "^5.2.0",
+    "react-use-websocket": "^2.7.1"
   }
 }

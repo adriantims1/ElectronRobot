@@ -1,4 +1,11 @@
 import React from "react";
 import ReactDOM from "react-dom";
+import App from "./App";
+import { BrowserRouter as Router } from "react-router-dom";
 
-ReactDOM.render(<h2>Hello from React in Electron !</h2>, document.body);
+ReactDOM.render(
+  <Router>
+    <App />
+  </Router>,
+  document.body
+);
