@@ -13,6 +13,9 @@ const createWindow = () => {
     minWidth: 800,
     minHeight: 600,
     show: false,
+    webPreferences: {
+      webSecurity: false,
+    },
   });
   mainWindow.setMenu(null);
   mainWindow.maximize();
