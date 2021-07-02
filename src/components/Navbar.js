@@ -116,7 +116,7 @@ export default function SideBar() {
           </Typography>
         </IconButton>
       </NavLink>
-      <NavLink to="/" className={classes.NavLink}>
+      <NavLink to="/logout" className={classes.NavLink}>
         <IconButton className={classes.iconButton}>
           <ExitToAppIcon className={classes.icons} />
           <Typography

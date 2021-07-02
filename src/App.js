@@ -6,13 +6,25 @@ import {
   Paper,
   Container,
 } from "@material-ui/core";
-
+import Settings from "./components/Page/Setting";
 import Login from "./components/Page/Login";
 import Trade from "./components/Page/Trade";
 import Navbar from "./components/Navbar";
 import Logout from "./components/Page/Logout";
 
 const theme = createMuiTheme({
+  overrides: {
+    MuiFormControlLabel: {
+      root: {
+        marginLeft: "0px",
+        marginRight: "0px",
+      },
+      labelPlacementTop: {
+        marginLeft: "0px",
+        flexDirection: "column-reverse",
+      },
+    },
+  },
   palette: {
     primary: {
       main: "#fdfeff",
@@ -26,9 +38,6 @@ const theme = createMuiTheme({
 });
 
 function App() {
-  const [authToken, setAuthToken] = useState();
-  const [deviceId, setDeviceId] = useState();
-
   return (
     <ThemeProvider theme={theme}>
       <div
@@ -52,8 +61,7 @@ function App() {
             <Switch>
               <Container maxWidth="lg" style={{ height: "100%" }}>
                 <Route exact path="/setting">
-                  <h2>Setting</h2>
-                  <NavLink to="/">Click Me</NavLink>
+                  <Settings />
                 </Route>
                 <Route exact path="/statistic">
                   <h2>Statistic</h2>

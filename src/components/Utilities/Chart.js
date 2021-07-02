@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Chart from "react-apexcharts";
 import ApexCharts from "apexcharts";
 import axios from "axios";
@@ -6,8 +6,13 @@ import { asSocket } from "../Utilities/TradeTools";
 
 export default function ToolChart(props) {
   const [dataState, setData] = useState([]);
-
-  useEffect(() => {
+  const [first, setFirst] = useState(true);
+  const memoizedCallBack = useCallback(() => {
+    console.log("memoized Called");
+    if (!first) {
+      setData([]);
+    }
+    setFirst(false);
     var candles = [];
     var largest = 0;
     var minimum = 0;
@@ -61,9 +66,12 @@ export default function ToolChart(props) {
       "message",
       (res) => {
         res = JSON.parse(res.data).data[0].assets[0];
+
         if (res.created_at.slice(17, 19) === "01" && firstTime) {
           firstTime = false;
-          candles.shift();
+          if (candles.length === 29) {
+            candles.shift();
+          }
           candles.push({
             x: res.created_at,
             y: [res.rate, res.rate, res.rate, res.rate],
@@ -100,16 +108,21 @@ export default function ToolChart(props) {
       false,
       true
     );
+  }, [props.market.ric]);
+
+  useEffect(() => {
+    console.log(props.market.ric);
+    memoizedCallBack();
     //<------------------------------------------->
     return function () {
-      toSend = JSON.stringify({
+      const toSend = JSON.stringify({
         action: "unsubscribe",
         rics: [props.market.ric],
       });
       asSocket.send(toSend);
       console.log("as socket unsubscribe", props.market.ric);
     };
-  }, []);
+  }, [props.market.ric]);
 
   return (
     <Chart
@@ -133,17 +146,7 @@ export default function ToolChart(props) {
             decimalsInFloat: 8,
           },
           animations: {
-            enabled: true,
-            easing: "easeinout",
-            speed: 800,
-            dynamicAnimation: {
-              enabled: true,
-              speed: 350,
-            },
-            animateGradually: {
-              enabled: true,
-              delay: 150,
-            },
+            enabled: false,
           },
         },
         title: {
@@ -152,7 +155,10 @@ export default function ToolChart(props) {
         },
       }}
       series={[
-        { name: "Euro/Usd", data: dataState.slice(dataState.length - 30) },
+        {
+          name: props.market.name,
+          data: dataState.slice(dataState.length - 30),
+        },
       ]}
       type="candlestick"
       width="100%"

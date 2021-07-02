@@ -1,7 +1,17 @@
 import axios from "axios";
 
-var asSocket, ws, userWsInitializationInterval, allMarket;
+var asSocket,
+  ws,
+  userWsInitializationInterval,
+  allMarket,
+  time,
+  tradeInterval,
+  currPrice,
+  assetTime;
 var ref = 1;
+var dealType = "demo";
+var compIndex = 0;
+var currAsset = {};
 
 async function getCandles() {
   try {
@@ -130,8 +140,64 @@ function connectUserWebSocket() {
 }
 
 function connectDataWebSocket() {
-  asSocket = new WebSocket("wss://as.binomo.com/");
+  asSocket = new WebSocket("wss://as.strategtry.com/");
+  asSocket.addEventListener("message", (res) => {
+    assetTime = new Date(res.created_at).getTime();
+    time = res.created_at.slice(17, 19);
+    currPrice = res.rate;
+  });
 }
+function setAsset(asset) {
+  currAsset = asset;
+}
+function setDealType(type) {
+  dealType = type;
+}
+function openTrade() {
+  if (time === "30") {
+    var maxloss = localStorage.getItem("maxloss");
+    maxloss = Number(maxloss);
+    var compensation = [
+      Math.round(maxloss * 0.05),
+      Math.round(maxloss * 0.1),
+      Math.round(maxloss * 0.25),
+      Math.round(maxloss * 0.6),
+    ];
+    tradeInterval = setInterval(() => {
+      //Open Trade
+      if (compIndex < 4) {
+        const toSend = JSON.stringify({
+          topic: "base",
+          event: "create_deal",
+          payload: {
+            asset: currAsset.ric,
+            asset_id: currAsset.id,
+            asset_name: currAsset.name,
+            amount: compensation[compIndex] * 100,
+            source: "mouse",
+            trend: "call",
+            expire_at: 60 * Math.ceil((Math.ceil(a.time / 1e3) + 30) / 60),
+            created_at: Date.now(),
+            option_type: "turbo",
+            deal_type: dealType,
+            tournament_id: null,
+          },
+          ref: ref,
+          join_ref: 1,
+        });
+        ws.send(toSend);
+        ref += 1;
+      } else {
+        closeTrade();
+      }
+    }, 120e3);
+  }
+}
+
+function closeTrade() {
+  clearInterval(tradeInterval);
+}
+
 export {
   ws,
   asSocket,
@@ -139,4 +205,5 @@ export {
   connectDataWebSocket,
   getCandles,
   allMarket,
+  setAsset,
 };

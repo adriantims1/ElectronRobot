@@ -12,7 +12,7 @@ import {
 } from "@material-ui/core";
 import Chart from "../Utilities/Chart";
 
-import { allMarket } from "../Utilities/TradeTools";
+import { allMarket, setAsset } from "../Utilities/TradeTools";
 
 const StyledButton = withStyles((theme) => ({
   root: {
@@ -60,6 +60,7 @@ const Trade = () => {
       name: availableMarket[market].name,
       ric: availableMarket[market].ric,
     });
+    setAsset(availableMarket[market]);
     handleClose();
   };
   const start = () => {
