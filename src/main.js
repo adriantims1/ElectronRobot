@@ -9,17 +9,32 @@ if (require("electron-squirrel-startup")) {
 
 const createWindow = () => {
   // Create the browser window.
+  const splashWindow = new BrowserWindow({
+    width: 600,
+    height: 400,
+    show: true,
+    frame: false,
+  });
+
+  splashWindow.loadURL(SPLASH_WINDOW_WEBPACK_ENTRY);
+
   const mainWindow = new BrowserWindow({
     minWidth: 800,
-    minHeight: 600,
+    minHeight: 800,
     show: false,
     webPreferences: {
       webSecurity: false,
     },
   });
-  mainWindow.setMenu(null);
-  mainWindow.maximize();
-  mainWindow.show();
+
+  mainWindow.once("ready-to-show", () => {
+    setTimeout(() => {
+      splashWindow.destroy();
+      mainWindow.removeMenu();
+      mainWindow.maximize();
+      mainWindow.show();
+    }, 5000);
+  });
 
   // and load the index.html of the app.
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);

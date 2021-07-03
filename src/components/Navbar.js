@@ -7,14 +7,14 @@ import SettingsIcon from "@material-ui/icons/Settings";
 import { Typography } from "@material-ui/core";
 import BarChartIcon from "@material-ui/icons/BarChart";
 import ExitToAppIcon from "@material-ui/icons/ExitToApp";
+import { ws, asSocket } from "./Utilities/TradeTools";
 const styles = makeStyles((theme) => ({
   sidebar: {
     display: "flex",
     flexDirection: "column",
-
-    height: "100%",
+    height: "90%",
     width: "20%",
-    justifyContent: "space-between",
+    justifyContent: "space-evenly",
     alignItems: "center",
   },
   sidebarContent: {
@@ -50,7 +50,7 @@ const styles = makeStyles((theme) => ({
   },
 }));
 
-export default function SideBar() {
+export default function SideBar({ setConnected }) {
   const classes = styles();
 
   return (
@@ -64,60 +64,53 @@ export default function SideBar() {
           style={{ height: "75px", width: "100px" }}
         ></img>
       </Box>
+      <div className={`${classes.sidebar} ${classes.sidebarContent}`}>
+        <NavLink
+          to="/trade"
+          activeClassName={classes.active}
+          className={classes.NavLink}
+        >
+          <IconButton className={classes.iconButton}>
+            <TrendingUpIcon className={classes.icons} />
+            <Typography
+              display="inline"
+              style={{ textDecoration: "none" }}
+              className={classes.iconText}
+            >
+              Trade
+            </Typography>
+          </IconButton>
+        </NavLink>
 
-      <NavLink
-        to="/trade"
-        activeClassName={classes.active}
-        className={classes.NavLink}
-      >
-        <IconButton className={classes.iconButton}>
-          <TrendingUpIcon className={classes.icons} />
-          <Typography
-            display="inline"
-            style={{ textDecoration: "none" }}
-            className={classes.iconText}
+        <NavLink
+          to="/setting"
+          activeClassName={classes.active}
+          className={classes.NavLink}
+        >
+          <IconButton
+            className={classes.iconButton}
+            style={{ marginBottom: "10%" }}
           >
-            Trade
-          </Typography>
-        </IconButton>
-      </NavLink>
-      <NavLink
-        to="/statistic"
-        activeClassName={classes.active}
-        className={classes.NavLink}
-      >
-        <IconButton className={classes.iconButton}>
-          <BarChartIcon className={classes.icons} />
-          <Typography
-            display="inline"
-            style={{ textDecoration: "none" }}
-            className={classes.iconText}
-          >
-            Statistic
-          </Typography>
-        </IconButton>
-      </NavLink>
-      <NavLink
-        to="/setting"
-        activeClassName={classes.active}
-        className={classes.NavLink}
-      >
+            <SettingsIcon className={classes.icons} />
+            <Typography
+              display="inline"
+              style={{ textDecoration: "none" }}
+              className={classes.iconText}
+            >
+              Settings
+            </Typography>
+          </IconButton>
+        </NavLink>
+
         <IconButton
           className={classes.iconButton}
-          style={{ marginBottom: "10%" }}
+          onClick={() => {
+            ws.close();
+            asSocket.close();
+            localStorage.clear();
+            setConnected(false);
+          }}
         >
-          <SettingsIcon className={classes.icons} />
-          <Typography
-            display="inline"
-            style={{ textDecoration: "none" }}
-            className={classes.iconText}
-          >
-            Settings
-          </Typography>
-        </IconButton>
-      </NavLink>
-      <NavLink to="/logout" className={classes.NavLink}>
-        <IconButton className={classes.iconButton}>
           <ExitToAppIcon className={classes.icons} />
           <Typography
             display="inline"
@@ -127,7 +120,7 @@ export default function SideBar() {
             Logout
           </Typography>
         </IconButton>
-      </NavLink>
+      </div>
     </Grid>
   );
 }

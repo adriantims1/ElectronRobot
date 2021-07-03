@@ -1,14 +1,43 @@
 import React, { useEffect, useState, useCallback } from "react";
 import Chart from "react-apexcharts";
-import ApexCharts from "apexcharts";
 import axios from "axios";
 import { asSocket } from "../Utilities/TradeTools";
+import ApexCharts from "apexcharts";
 
-export default function ToolChart(props) {
+function ToolChart(props) {
   const [dataState, setData] = useState([]);
   const [first, setFirst] = useState(true);
+
+  const [options, setOptions] = useState({
+    chart: {
+      id: "realtime",
+      zoom: {
+        type: "x",
+        enabled: false,
+        autoScaleYaxis: true,
+      },
+      xaxis: {
+        type: "datetime",
+      },
+      yaxis: {
+        forceNiceScale: true,
+        min: function (min) {
+          return min;
+        },
+
+        decimalsInFloat: 8,
+      },
+      animations: {
+        enabled: false,
+      },
+    },
+    title: {
+      text: `${props.market.name} - 1 min interval`,
+      align: "center",
+    },
+  });
+
   const memoizedCallBack = useCallback(() => {
-    console.log("memoized Called");
     if (!first) {
       setData([]);
     }
@@ -45,7 +74,6 @@ export default function ToolChart(props) {
           minimum = Math.min(...el.y);
         }
       });
-      setData(candles);
     }
 
     getCandles();
@@ -59,59 +87,52 @@ export default function ToolChart(props) {
       action: "subscribe",
       rics: [props.market.ric],
     });
+
     asSocket.send(toSend);
     //Change the table
     var firstTime = true;
-    asSocket.addEventListener(
-      "message",
-      (res) => {
-        res = JSON.parse(res.data).data[0].assets[0];
+    asSocket.onmessage = (res) => {
+      res = JSON.parse(res.data).data[0].assets[0];
 
-        if (res.created_at.slice(17, 19) === "01" && firstTime) {
-          firstTime = false;
-          if (candles.length === 29) {
-            candles.shift();
-          }
-          candles.push({
-            x: res.created_at,
-            y: [res.rate, res.rate, res.rate, res.rate],
-          });
-          setTimeout(function () {
-            firstTime = true;
-          }, 1000);
-        } else if (res.rate < candles[candles.length - 1].y[2]) {
-          candles[candles.length - 1].y[2] = res.rate;
-        } else if (res.rate > candles[candles.length - 1].y[1]) {
-          candles[candles.length - 1].y[1] = res.rate;
+      if (res.created_at.slice(17, 19) === "01" && firstTime) {
+        firstTime = false;
+        if (candles.length === 29) {
+          candles.shift();
         }
-        candles[candles.length - 1].y[3] = res.rate;
-        candles[candles.length - 1].x = res.created_at.slice(11, 19);
-
-        ApexCharts.exec("realtime", "updateSeries", [
-          {
-            data: [...candles],
-          },
-        ]);
-        if (res.rate > largest) {
-          largest = res.rate;
-        }
-        if (res.rate < minimum) {
-          minimum = res.rate;
-        }
-        ApexCharts.exec("realtime", "updateOptions", {
-          yaxis: {
-            max: largest,
-            min: minimum,
-          },
+        candles.push({
+          x: res.created_at,
+          y: [res.rate, res.rate, res.rate, res.rate],
         });
-      },
-      false,
-      true
-    );
+        setTimeout(function () {
+          firstTime = true;
+        }, 1000);
+      } else if (res.rate < candles[candles.length - 1].y[2]) {
+        candles[candles.length - 1].y[2] = res.rate;
+      } else if (res.rate > candles[candles.length - 1].y[1]) {
+        candles[candles.length - 1].y[1] = res.rate;
+      }
+      candles[candles.length - 1].y[3] = res.rate;
+      candles[candles.length - 1].x = res.created_at.slice(11, 19);
+
+      ApexCharts.exec("realtime", "updateSeries", [
+        {
+          name: props.market.name,
+          data: [...candles],
+        },
+      ]);
+      if (res.rate > largest) {
+        largest = res.rate;
+      }
+      if (res.rate < minimum) {
+        minimum = res.rate;
+      }
+      ApexCharts.exec("realtime", "updateOptions", {
+        yaxis: { max: largest, min: minimum },
+      });
+    };
   }, [props.market.ric]);
 
   useEffect(() => {
-    console.log(props.market.ric);
     memoizedCallBack();
     //<------------------------------------------->
     return function () {
@@ -120,49 +141,19 @@ export default function ToolChart(props) {
         rics: [props.market.ric],
       });
       asSocket.send(toSend);
-      console.log("as socket unsubscribe", props.market.ric);
+      asSocket.removeEventListener("message", function () {});
     };
   }, [props.market.ric]);
 
   return (
     <Chart
-      options={{
-        chart: {
-          id: "realtime",
-          zoom: {
-            type: "x",
-            enabled: false,
-            autoScaleYaxis: true,
-          },
-          xaxis: {
-            type: "datetime",
-          },
-          yaxis: {
-            forceNiceScale: true,
-            min: function (min) {
-              return min;
-            },
-
-            decimalsInFloat: 8,
-          },
-          animations: {
-            enabled: false,
-          },
-        },
-        title: {
-          text: `${props.market.name} - 1 min interval`,
-          align: "center",
-        },
-      }}
-      series={[
-        {
-          name: props.market.name,
-          data: dataState.slice(dataState.length - 30),
-        },
-      ]}
+      options={options}
+      series={[{ name: props.market.name, data: dataState }]}
       type="candlestick"
       width="100%"
       height="80%"
     />
   );
 }
+
+export default ToolChart;

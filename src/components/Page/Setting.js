@@ -10,7 +10,11 @@ import {
   Button,
   TextField,
   InputAdornment,
+  Snackbar,
 } from "@material-ui/core";
+
+import { Alert } from "@material-ui/lab";
+import { setSettings } from "../Utilities/TradeTools";
 const StyledButton = withStyles((theme) => ({
   root: {
     backgroundColor: theme.palette.secondary.main,
@@ -28,12 +32,31 @@ const styles = makeStyles((theme) => ({
   },
 }));
 
-function Setting() {
+function Setting({ balanceType, setBalanceType }) {
   const classes = styles();
-  const [balanceType, setBalanceType] = useState("demo");
+
+  const [maxLoss, setMaxLoss] = useState(20);
+  const [maxProfit, setMaxProfit] = useState(0);
+  const [snackbar, setSnackbar] = useState(false);
 
   const handleBalanceChange = (e) => {
     setBalanceType(e.target.value);
+  };
+  const handleMaxProfit = (e) => {
+    setMaxProfit(e.target.value);
+  };
+  const handleMaxLoss = (e) => {
+    setMaxLoss(e.target.value);
+  };
+  const handleSave = (e) => {
+    if (maxLoss >= 20 && maxProfit >= 0) {
+      setSettings(maxLoss, maxProfit, balanceType);
+    } else {
+      setSnackbar(true);
+    }
+  };
+  const handleSnackbar = (e) => {
+    setSnackbar(false);
   };
   return (
     <>
@@ -81,6 +104,8 @@ function Setting() {
                   ),
                 }}
                 margin="dense"
+                value={maxLoss}
+                onChange={handleMaxLoss}
               ></TextField>
             }
             label={<Typography>Max Loss / Day: </Typography>}
@@ -102,6 +127,8 @@ function Setting() {
                   ),
                 }}
                 margin="dense"
+                value={maxProfit}
+                onChange={handleMaxProfit}
               ></TextField>
             }
             label={<Typography>Max Profit / Day:</Typography>}
@@ -109,7 +136,17 @@ function Setting() {
             className={classes.controlContainer}
           />
         </FormControl>
-        <StyledButton>Save</StyledButton>
+        <StyledButton onClick={handleSave}>Save</StyledButton>
+        <Snackbar
+          open={snackbar}
+          autoHideDuration={10000}
+          onClose={handleSnackbar}
+        >
+          <Alert severity="error">
+            Max Loss must be greater than $10 and Max profit must be greater
+            than $0
+          </Alert>
+        </Snackbar>
       </div>
     </>
   );

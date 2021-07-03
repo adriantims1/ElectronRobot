@@ -10,10 +10,37 @@ import Settings from "./components/Page/Setting";
 import Login from "./components/Page/Login";
 import Trade from "./components/Page/Trade";
 import Navbar from "./components/Navbar";
-import Logout from "./components/Page/Logout";
 
 const theme = createMuiTheme({
   overrides: {
+    MuiOutlinedInput: {
+      root: {
+        position: "relative",
+        "& $notchedOutline": {
+          borderColor: "rgba(0, 0, 0, 0.23)",
+          borderWidth: 3,
+        },
+        "&:hover:not($disabled):not($focused):not($error) $notchedOutline": {
+          borderColor: "#0b4870",
+          // Reset on touch devices, it doesn't add specificity
+          "@media (hover: none)": {
+            borderColor: "rgba(0, 0, 0, 0.23)",
+          },
+        },
+        "&$focused $notchedOutline": {
+          borderColor: "#0b4870",
+          borderWidth: 3,
+        },
+      },
+    },
+
+    MuiFormLabel: {
+      root: {
+        "&$focused": {
+          color: "#4A90E2",
+        },
+      },
+    },
     MuiFormControlLabel: {
       root: {
         marginLeft: "0px",
@@ -38,6 +65,11 @@ const theme = createMuiTheme({
 });
 
 function App() {
+  const [connected, setConnected] = useState(false);
+  const [balanceType, setBalanceType] = useState("demo");
+  const [demo, setDemo] = useState(0);
+  const [real, setReal] = useState(0);
+  const [iso, setIso] = useState("");
   return (
     <ThemeProvider theme={theme}>
       <div
@@ -48,7 +80,7 @@ function App() {
           width: "100vw",
         }}
       >
-        <Navbar />
+        <Navbar setConnected={setConnected} />
         <div
           style={{
             width: "80%",
@@ -61,20 +93,29 @@ function App() {
             <Switch>
               <Container maxWidth="lg" style={{ height: "100%" }}>
                 <Route exact path="/setting">
-                  <Settings />
+                  <Settings
+                    balanceType={balanceType}
+                    setBalanceType={setBalanceType}
+                  />
                 </Route>
-                <Route exact path="/statistic">
-                  <h2>Statistic</h2>
-                  <NavLink to="/">Click Me</NavLink>
-                </Route>
+
                 <Route exact path="/trade">
-                  <Trade />
-                </Route>
-                <Route exact path="/logout">
-                  <Logout />
+                  <Trade
+                    demo={demo}
+                    real={real}
+                    iso={iso}
+                    setDemo={setDemo}
+                    setReal={setReal}
+                  />
                 </Route>
                 <Route exact path="/">
-                  <Login />
+                  <Login
+                    connected={connected}
+                    setConnected={setConnected}
+                    setDemo={setDemo}
+                    setReal={setReal}
+                    setIso={setIso}
+                  />
                 </Route>
                 <Route path="*">
                   <Redirect to="/" />
