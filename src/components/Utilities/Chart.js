@@ -3,34 +3,14 @@ import Chart from "react-apexcharts";
 import axios from "axios";
 import { asSocket } from "../Utilities/TradeTools";
 import ApexCharts from "apexcharts";
+import { options as optionsT } from "../initialState/chartInitialState";
 
 function ToolChart(props) {
   const [dataState, setData] = useState([]);
   const [first, setFirst] = useState(true);
 
   const [options, setOptions] = useState({
-    chart: {
-      id: "realtime",
-      zoom: {
-        type: "x",
-        enabled: false,
-        autoScaleYaxis: true,
-      },
-      xaxis: {
-        type: "datetime",
-      },
-      yaxis: {
-        forceNiceScale: true,
-        min: function (min) {
-          return min;
-        },
-
-        decimalsInFloat: 8,
-      },
-      animations: {
-        enabled: false,
-      },
-    },
+    ...optionsT,
     title: {
       text: `${props.market.name} - 1 min interval`,
       align: "center",
@@ -92,8 +72,10 @@ function ToolChart(props) {
     //Change the table
     var firstTime = true;
     asSocket.onmessage = (res) => {
-      res = JSON.parse(res.data).data[0].assets[0];
-
+      res = JSON.parse(res.data)?.data[0].assets[0];
+      if (!res) {
+        return;
+      }
       if (res.created_at.slice(17, 19) === "01" && firstTime) {
         firstTime = false;
         if (candles.length === 29) {
@@ -141,7 +123,6 @@ function ToolChart(props) {
         rics: [props.market.ric],
       });
       asSocket.send(toSend);
-      asSocket.removeEventListener("message", function () {});
     };
   }, [props.market.ric]);
 

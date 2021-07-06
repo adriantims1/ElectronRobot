@@ -1,6 +1,6 @@
 {
   "name": "BinomoRobot",
-  "productName": "BinomoRobot",
+  "productName": "Vulcan Auto Trading",
   "version": "1.0.0",
   "description": "My Electron application description",
   "main": ".webpack/main",
@@ -30,7 +30,7 @@
         {
           "name": "@electron-forge/maker-zip",
           "platforms": [
-            "darwin"
+            "darwin", "linux"
           ]
         },
         {

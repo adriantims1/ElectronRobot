@@ -25,6 +25,17 @@ import {
   increaseCompIndex,
 } from "../Utilities/TradeTools";
 
+import {
+  aMarket,
+  m,
+  cProps,
+  sTrade,
+  i,
+  t,
+  s,
+  setter,
+} from "../initialState/tradeInitialState";
+
 const StyledButton = withStyles((theme) => ({
   root: {
     backgroundColor: theme.palette.secondary.main,
@@ -39,19 +50,20 @@ const StyledButton = withStyles((theme) => ({
 
 const Trade = ({ iso, real, demo, setDemo, setReal }) => {
   const [open, setOpen] = useState(false);
-  const [availableMarket, setAvailableMarket] = useState([]);
-  const [market, setMarket] = useState(0);
-  const [chartProps, setChartProps] = useState(null);
-  const [startTrade, setStartTrade] = useState(false);
+  const [availableMarket, setAvailableMarket] = useState(aMarket);
+  const [market, setMarket] = useState(m);
+  const [chartProps, setChartProps] = useState(cProps);
+  const [startTrade, setStartTrade] = useState(sTrade);
   const [fade, setFade] = useState(false);
-  const [investment, setInvestment] = useState("0");
-  const [trend, setTrend] = useState();
-  const [status, setStatus] = useState();
+  const [investment, setInvestment] = useState(i);
+  const [trend, setTrend] = useState(t);
+  const [status, setStatus] = useState(s);
 
   useEffect(() => {
     //get all available assets
     //<------------------------------------------->
     setAvailableMarket(allMarket);
+    setter("aMarket", allMarket);
   }, []);
 
   const handleClickOpen = () => {
@@ -69,6 +81,10 @@ const Trade = ({ iso, real, demo, setDemo, setReal }) => {
       name: availableMarket[market].name,
       ric: availableMarket[market].ric,
     });
+    setter("cProps", {
+      name: availableMarket[market].name,
+      ric: availableMarket[market].ric,
+    });
     setAsset(availableMarket[market]);
     handleClose();
   };
@@ -77,46 +93,72 @@ const Trade = ({ iso, real, demo, setDemo, setReal }) => {
     if (startTrade) {
       closeTrade();
       setStartTrade((prev) => !prev);
+      setter("sTrade", false);
       ws.removeEventListener("message", () => {});
     } else {
       ws.addEventListener("message", (res) => {
         res = JSON.parse(res.data);
-
-        if (res.event === "deal_created") {
-          setTrend(res.payload.trend === "call" ? "Up" : "Down");
-          trendInStart = res.payload.trend;
-          openPriceInStart = res.payload.open_rate;
-          setInvestment(res.payload.amount / 100);
-          setStatus("Trading");
-        } else if (res.event === "close_deal_batch") {
-          setTrend("");
-          setInvestment(0);
-          if (trendInStart === "call") {
-            setStatus(
-              res.payload.end_rate > openPriceInStart
-                ? "Win"
-                : res.payload.end_rate < openPriceInStart
-                ? "Lose"
-                : "No Change"
-            );
-            if (res.payload.end_rate < openPriceInStart) {
-              increaseCompIndex();
+        switch (res.event) {
+          case "deal_created":
+            setTrend(res.payload.trend === "call" ? "Up" : "Down");
+            setter("t", res.payload.trend === "call" ? "Up" : "Down");
+            trendInStart = res.payload.trend;
+            openPriceInStart = res.payload.open_rate;
+            setInvestment(res.payload.amount / 100);
+            setter("i", res.payload.amount / 100);
+            setStatus("Trading");
+            setter("s", "Trading");
+            break;
+          case "close_deal_batch":
+            setTrend("");
+            setter("t", "");
+            setInvestment(0);
+            setter("i", "");
+            if (trendInStart === "call") {
+              setStatus(
+                res.payload.end_rate > openPriceInStart
+                  ? "Win"
+                  : res.payload.end_rate < openPriceInStart
+                  ? "Lose"
+                  : "No Change"
+              );
+              setter(
+                "s",
+                res.payload.end_rate > openPriceInStart
+                  ? "Win"
+                  : res.payload.end_rate < openPriceInStart
+                  ? "Lose"
+                  : "No Change"
+              );
+              if (res.payload.end_rate < openPriceInStart) {
+                increaseCompIndex();
+              }
+            } else {
+              setStatus(
+                res.payload.end_rate < openPriceInStart
+                  ? "Win"
+                  : res.payload.end_rate > openPriceInStart
+                  ? "Lose"
+                  : "No Change"
+              );
+              setter(
+                "s",
+                res.payload.end_rate < openPriceInStart
+                  ? "Win"
+                  : res.payload.end_rate > openPriceInStart
+                  ? "Lose"
+                  : "No Change"
+              );
+              if (res.payload.end_rate > openPriceInStart) {
+                increaseCompIndex();
+              }
             }
-          } else {
-            setStatus(
-              res.payload.end_rate < openPriceInStart
-                ? "Win"
-                : res.payload.end_rate > openPriceInStart
-                ? "Lose"
-                : "No Change"
-            );
-            if (res.payload.end_rate > openPriceInStart) {
-              increaseCompIndex();
-            }
-          }
-        } else if (res.event === "change_balance") {
-          setDemo(res.payload.demo_balance / 100);
-          setReal(res.payload.balance / 100);
+            break;
+          case "change_balance":
+            setDemo(res.payload.demo_balance / 100);
+            setReal(res.payload.balance / 100);
+            break;
+          default:
         }
       });
       var d = new Date();
@@ -130,6 +172,7 @@ const Trade = ({ iso, real, demo, setDemo, setReal }) => {
             setFade(false);
             clearInterval(interval);
             setStartTrade((prev) => !prev);
+            setter("sTrade", true);
           }
         }, 1000);
       }

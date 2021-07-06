@@ -1,5 +1,9 @@
 import axios from "axios";
 import ApexCharts from "apexcharts";
+import {
+  addAnnotations,
+  removeAnnotations,
+} from "../initialState/chartInitialState";
 
 var asSocket,
   ws,
@@ -165,9 +169,14 @@ function connectUserWebSocket() {
       }
     } else if (res.event === "close_deal_batch") {
       //Calculate win or loss
-      ApexCharts.exec("realtime", "clearAnnotations");
+      ApexCharts.exec("realtime", "updateOptions", {
+        annotations: {
+          yaxis: [],
+        },
+      });
+      removeAnnotations();
     } else if (res.event === "deal_created") {
-      ApexCharts.exec("realtime", "addYaxisAnnotation", {
+      const toAdd = {
         y: res.payload.open_rate,
         borderColor: "#0b4870",
         label: {
@@ -181,7 +190,9 @@ function connectUserWebSocket() {
           text: `Open trade direction: ${res.payload.trend}`,
           position: "left",
         },
-      });
+      };
+      ApexCharts.exec("realtime", "addYaxisAnnotation", toAdd);
+      addAnnotations({ yaxis: [toAdd] });
     }
   };
   ws.onclose = function () {

@@ -33,7 +33,7 @@ const createWindow = () => {
       mainWindow.removeMenu();
       mainWindow.maximize();
       mainWindow.show();
-    }, 5000);
+    }, 3000);
   });
 
   // and load the index.html of the app.
@@ -41,7 +41,7 @@ const createWindow = () => {
   console.log("testing", MAIN_WINDOW_WEBPACK_ENTRY);
 
   // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+  mainWindow.openDevTools();
 };
 
 // This method will be called when Electron has finished
