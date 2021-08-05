@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   makeStyles,
   FormControl,
@@ -13,8 +13,12 @@ import {
   Snackbar,
 } from "@material-ui/core";
 
+import getSymbolFromCurrency from "currency-symbol-map";
 import { Alert } from "@material-ui/lab";
-import { setSettings } from "../Utilities/TradeTools";
+
+//Context
+import InitDataContext from "../context/InitDataContext";
+
 const StyledButton = withStyles((theme) => ({
   root: {
     backgroundColor: theme.palette.secondary.main,
@@ -25,6 +29,9 @@ const StyledButton = withStyles((theme) => ({
   label: {
     textTransform: "capitalize",
   },
+  disabled: {
+    opacity: 0.5,
+  },
 }))(Button);
 const styles = makeStyles((theme) => ({
   controlContainer: {
@@ -32,31 +39,35 @@ const styles = makeStyles((theme) => ({
   },
 }));
 
-function Setting({ balanceType, setBalanceType }) {
+function Setting() {
   const classes = styles();
+  const { state, setSettings } = useContext(InitDataContext);
 
-  const [maxLoss, setMaxLoss] = useState(20);
-  const [maxProfit, setMaxProfit] = useState(0);
-  const [snackbar, setSnackbar] = useState(false);
+  const [maxLoss, setMaxLoss] = useState(state.settings.maxLoss);
+  const [maxProfit, setMaxProfit] = useState(state.settings.maxProfit);
+  const [balanceType, setBalanceType] = useState(state.settings.balanceType);
+  const [errorSnackbar, setErrorSnackbar] = useState(false);
+  const [successSnackbar, setSuccessSnackbar] = useState(false);
 
   const handleBalanceChange = (e) => {
     setBalanceType(e.target.value);
   };
   const handleMaxProfit = (e) => {
-    setMaxProfit(e.target.value);
+    setMaxProfit(Number(e.target.value));
   };
   const handleMaxLoss = (e) => {
-    setMaxLoss(e.target.value);
+    setMaxLoss(Number(e.target.value));
   };
   const handleSave = (e) => {
-    if (maxLoss >= 20 && maxProfit >= 0) {
-      setSettings(maxLoss, maxProfit, balanceType);
+    if (maxLoss < 20 || maxProfit < 0) {
+      setErrorSnackbar(true);
     } else {
-      setSnackbar(true);
+      setSettings({ maxLoss, maxProfit, balanceType });
+      setSuccessSnackbar(true);
     }
   };
-  const handleSnackbar = (e) => {
-    setSnackbar(false);
+  const handleErrorSnackbar = (e) => {
+    setErrorSnackbar(false);
   };
   return (
     <>
@@ -100,7 +111,9 @@ function Setting({ balanceType, setBalanceType }) {
                 variant="outlined"
                 InputProps={{
                   startAdornment: (
-                    <InputAdornment position="start">$</InputAdornment>
+                    <InputAdornment position="start">
+                      {getSymbolFromCurrency(state.iso)}
+                    </InputAdornment>
                   ),
                 }}
                 margin="dense"
@@ -123,7 +136,9 @@ function Setting({ balanceType, setBalanceType }) {
                 variant="outlined"
                 InputProps={{
                   startAdornment: (
-                    <InputAdornment position="start">$</InputAdornment>
+                    <InputAdornment position="start">
+                      {getSymbolFromCurrency(state.iso)}
+                    </InputAdornment>
                   ),
                 }}
                 margin="dense"
@@ -138,14 +153,25 @@ function Setting({ balanceType, setBalanceType }) {
         </FormControl>
         <StyledButton onClick={handleSave}>Save</StyledButton>
         <Snackbar
-          open={snackbar}
+          open={errorSnackbar}
           autoHideDuration={10000}
-          onClose={handleSnackbar}
+          onClose={handleErrorSnackbar}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         >
           <Alert severity="error">
             Max Loss must be greater than $10 and Max profit must be greater
             than $0
           </Alert>
+        </Snackbar>
+        <Snackbar
+          open={successSnackbar}
+          autoHideDuration={10000}
+          onClose={() => {
+            setSuccessSnackbar(false);
+          }}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        >
+          <Alert severity="success">Successful!</Alert>
         </Snackbar>
       </div>
     </>

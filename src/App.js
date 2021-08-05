@@ -6,10 +6,11 @@ import {
   Paper,
   Container,
 } from "@material-ui/core";
-import Settings from "./components/Page/Setting";
-import Login from "./components/Page/Login";
-import Trade from "./components/Page/Trade";
+import Settings from "./Page/Setting";
+import Login from "./Page/Login";
+import Trade from "./Page/Trade";
 import Navbar from "./components/Navbar";
+import Home from "./Page/Home";
 
 const theme = createMuiTheme({
   overrides: {
@@ -51,8 +52,17 @@ const theme = createMuiTheme({
         flexDirection: "column-reverse",
       },
     },
+    MuiButton: {
+      disabled: {
+        opacity: 0.5,
+        color: "white",
+      },
+    },
   },
   palette: {
+    action: {
+      disabled: "white",
+    },
     primary: {
       main: "#fdfeff",
       dark: "#f7f9fb",
@@ -66,10 +76,6 @@ const theme = createMuiTheme({
 
 function App() {
   const [connected, setConnected] = useState(false);
-  const [balanceType, setBalanceType] = useState("demo");
-  const [demo, setDemo] = useState(0);
-  const [real, setReal] = useState(0);
-  const [iso, setIso] = useState("");
   return (
     <ThemeProvider theme={theme}>
       <div
@@ -93,29 +99,16 @@ function App() {
             <Switch>
               <Container maxWidth="lg" style={{ height: "100%" }}>
                 <Route exact path="/setting">
-                  <Settings
-                    balanceType={balanceType}
-                    setBalanceType={setBalanceType}
-                  />
+                  <Settings />
                 </Route>
-
                 <Route exact path="/trade">
-                  <Trade
-                    demo={demo}
-                    real={real}
-                    iso={iso}
-                    setDemo={setDemo}
-                    setReal={setReal}
-                  />
+                  <Trade connected={connected} />
+                </Route>
+                <Route exact path="/home">
+                  <Home />
                 </Route>
                 <Route exact path="/">
-                  <Login
-                    connected={connected}
-                    setConnected={setConnected}
-                    setDemo={setDemo}
-                    setReal={setReal}
-                    setIso={setIso}
-                  />
+                  <Login setConnected={setConnected} connected={connected} />
                 </Route>
                 <Route path="*">
                   <Redirect to="/" />

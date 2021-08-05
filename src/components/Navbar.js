@@ -5,9 +5,11 @@ import TrendingUpIcon from "@material-ui/icons/TrendingUp";
 
 import SettingsIcon from "@material-ui/icons/Settings";
 import { Typography } from "@material-ui/core";
-import BarChartIcon from "@material-ui/icons/BarChart";
+import HomeIcon from "@material-ui/icons/Home";
 import ExitToAppIcon from "@material-ui/icons/ExitToApp";
-import { ws, asSocket } from "./Utilities/TradeTools";
+
+import { wsSocket, asSocket } from "../Utilities/WebSocket";
+
 const styles = makeStyles((theme) => ({
   sidebar: {
     display: "flex",
@@ -66,6 +68,22 @@ export default function SideBar({ setConnected }) {
       </Box>
       <div className={`${classes.sidebar} ${classes.sidebarContent}`}>
         <NavLink
+          to="/home"
+          activeClassName={classes.active}
+          className={classes.NavLink}
+        >
+          <IconButton className={classes.iconButton}>
+            <HomeIcon className={classes.icons} />
+            <Typography
+              display="inline"
+              style={{ textDecoration: "none" }}
+              className={classes.iconText}
+            >
+              Home
+            </Typography>
+          </IconButton>
+        </NavLink>
+        <NavLink
           to="/trade"
           activeClassName={classes.active}
           className={classes.NavLink}
@@ -105,7 +123,7 @@ export default function SideBar({ setConnected }) {
         <IconButton
           className={classes.iconButton}
           onClick={() => {
-            ws.close();
+            wsSocket.close();
             asSocket.close();
             localStorage.clear();
             setConnected(false);

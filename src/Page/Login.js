@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   Box,
   Button,
@@ -17,15 +17,30 @@ import {
   withStyles,
 } from "@material-ui/core";
 import { Alert } from "@material-ui/lab";
-import {
-  connectDataWebSocket,
-  connectUserWebSocket,
-  ws,
-  asSocket,
-  getCandles,
-} from "../Utilities/TradeTools";
 
-import axios from "axios";
+import {
+  connectAsSocket,
+  connectWsSocket,
+  wsSocket,
+  asSocket,
+  subscribeAsSocket,
+} from "../Utilities/WebSocket";
+
+import { isSameDay } from "date-fns";
+import { v4 as uuidv4 } from "uuid";
+
+//Context
+import ChartDataContext from "../context/ChartDataContext";
+import InitDataContext from "../context/InitDataContext";
+
+//Chart Setter Initialization
+import { setInitializeFunction } from "../Utilities/ChartLogic";
+
+//SVG
+import Hello from "../assets/Hello.svg";
+
+//annotation
+import { initializeAnnotation } from "../Utilities/WebSocketLogic";
 
 const StyledButton = withStyles((theme) => ({
   root: {
@@ -37,6 +52,9 @@ const StyledButton = withStyles((theme) => ({
   label: {
     textTransform: "capitalize",
   },
+  disabled: {
+    opacity: 0.5,
+  },
 }))(Button);
 
 const styles = makeStyles((theme) => ({
@@ -45,8 +63,11 @@ const styles = makeStyles((theme) => ({
   },
 }));
 
-const Login = (props) => {
+const Login = ({ setConnected, connected }) => {
   const classes = styles();
+  const { setAvailableMarket, addAnnotation, removeAnnotation, setYAxis } =
+    useContext(ChartDataContext);
+  const { setTodayProfit: setTodayProfitFunc } = useContext(InitDataContext);
   const [snackbar, setSnackBar] = useState(false);
   const [authorization, setAuthorization] = useState(
     localStorage.getItem("authtoken") !== null
@@ -58,6 +79,7 @@ const Login = (props) => {
       ? localStorage.getItem("deviceid")
       : ""
   );
+
   const [loading, setLoading] = useState(false);
 
   const handleAuthorization = (e) => {
@@ -72,66 +94,52 @@ const Login = (props) => {
     setSnackBar(false);
   };
 
-  async function getBalance() {
-    let config = {
-      headers: {
-        "Authorization-Token": authorization,
-        "Device-Id": device,
-        "Device-Type": "android",
-        "Authorization-Version": 2,
-      },
-    };
-    let data = await axios.get(
-      "https:api.binomo.com/bank/v1/read?locale=en",
-      config
-    );
-    data = data.data.data;
-    console.log(data);
-    props.setDemo(data[0].amount / 100);
-    props.setReal(data[1].amount / 100);
-    props.setIso(data[0].currency);
-  }
-
+  const setTodayProfit = () => {
+    //todayProfits = {demo: Number, real: Number, date: Date}
+    let todayProfits = JSON.parse(localStorage.getItem("todayprofits"));
+    if (todayProfits && isSameDay(todayProfits.date, new Date.now())) {
+      setTodayProfitFunc({ real: todayProfits.real, demo: todayProfits.demo });
+      localStorage.setItem(
+        "todayprofits",
+        JSON.stringify({
+          real: todayProfits.real,
+          demo: todayProfits.demo,
+          date: new Date.now(),
+        })
+      );
+      console.log("new profit updated");
+    }
+    console.log("no profit updated");
+  };
   function handleConnect() {
     localStorage.setItem("authtoken", authorization);
     localStorage.setItem("deviceid", device);
     setLoading(true);
-    connectUserWebSocket();
-    let wsOpen,
-      asOpen = false;
-    ws.addEventListener("error", function () {
+    connectWsSocket(authorization, device);
+
+    wsSocket.onerror = function () {
       setLoading(false);
       setSnackBar(true);
-      console.log("Cannot Connect");
-    });
-    ws.addEventListener("open", function () {
-      wsOpen = true;
-      getCandles();
-      getBalance();
-      if (asOpen) {
-        setLoading(false);
-        props.setConnected(true);
-      }
-
-      console.log("User Authentication Successful");
-    });
-
-    connectDataWebSocket();
-    asSocket.onError = function () {
-      console.log("Cannot Connect");
     };
-    asSocket.addEventListener("open", function () {
-      asOpen = true;
-      if (wsOpen) {
+    wsSocket.addEventListener("open", function () {
+      connectAsSocket();
+      asSocket.onError = function () {};
+      asSocket.addEventListener("open", function () {
         setLoading(false);
-        props.setConnected(true);
-      }
-      console.log("As Socket Ready");
+        setConnected(true);
+        wsSocket.removeEventListener("open", () => {});
+        asSocket.removeEventListener("open", () => {});
+        subscribeAsSocket("", "Z-CRY/IDX", false);
+        setInitializeFunction(setYAxis);
+        setAvailableMarket();
+        setTodayProfit();
+        initializeAnnotation(addAnnotation, removeAnnotation);
+      });
     });
   }
   return (
     <>
-      <Dialog open={!props.connected}>
+      <Dialog open={!connected}>
         <DialogTitle>Get the information from the website</DialogTitle>
         <DialogContent>
           <FormControl fullWidth={true}>
@@ -166,13 +174,16 @@ const Login = (props) => {
               style={{ marginBottom: "20px" }}
             />
           </FormControl>
-          <Fade in={loading} unmountOnExit>
-            <CircularProgress color="secondary" />
-          </Fade>
         </DialogContent>
 
         <DialogActions>
-          <StyledButton onClick={handleConnect}>Connect</StyledButton>
+          <StyledButton onClick={handleConnect} disabled={loading}>
+            {!loading ? (
+              "Connect"
+            ) : (
+              <CircularProgress color="primary" size={25} />
+            )}
+          </StyledButton>
         </DialogActions>
         <Snackbar
           open={snackbar}
@@ -180,11 +191,10 @@ const Login = (props) => {
           onClose={handleSnackbar}
         >
           <Alert severity="error">
-            Error Authenticating (Wrong Email or Password)
+            Error Authenticating (Wrong Authorization Token or Device Id)
           </Alert>
         </Snackbar>
       </Dialog>
-
       <div
         style={{
           display: "flex",
@@ -197,15 +207,15 @@ const Login = (props) => {
           boxSizing: "border-box",
         }}
       >
-        <Box>
-          <Typography variant="h1" color="secondary">
-            Hello!
-          </Typography>
-        </Box>
-
-        <Box>
-          <Typography>Check your settings before trade</Typography>
-        </Box>
+        <img src={Hello} width="100%" />
+        <Typography
+          variant="h1"
+          color="secondary"
+          style={{ margin: "10px 0px" }}
+        >
+          Hello!
+        </Typography>
+        <Typography>Check your settings before trade</Typography>
       </div>
     </>
   );

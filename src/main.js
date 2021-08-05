@@ -1,4 +1,5 @@
 const { app, BrowserWindow } = require("electron");
+
 const path = require("path");
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -24,6 +25,9 @@ const createWindow = () => {
     show: false,
     webPreferences: {
       webSecurity: false,
+      nodeIntegration: true,
+      contextIsolation: false,
+      enableRemoteModule: true,
     },
   });
 
@@ -33,7 +37,7 @@ const createWindow = () => {
       mainWindow.removeMenu();
       mainWindow.maximize();
       mainWindow.show();
-    }, 3000);
+    }, 5000);
   });
 
   // and load the index.html of the app.
